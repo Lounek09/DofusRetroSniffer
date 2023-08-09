@@ -1,0 +1,12 @@
+{
+  "Servers": [
+    "dofusretro-ga-eratz.ankama-games.com",
+    "dofusretro-ga-henual.ankama-games.com",
+    "dofusretro-ga-crail.ankama-games.com",
+    "dofusretro-ga-galga.ankama-games.com",
+    "dofusretro-ga-boune.ankama-games.com",
+    "dofusretro-ga-beta.ankama-games.com"
+  ],
+  "GamePort": 443,
+  "LocalIp": "192.168.1.81"
+}
