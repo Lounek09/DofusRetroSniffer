@@ -2,28 +2,28 @@
 
 using System.Reflection;
 
-namespace DofusRetroSniffer
+namespace DofusRetroSniffer;
+
+public static class Program
 {
-    public static class Program
+    public static readonly string APP_PATH = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
+
+    public static async Task Main()
     {
-        public static readonly string APP_PATH = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
+        Logger.Info(Assembly.GetExecutingAssembly().Location);
 
-        public static Sniffer? Sniffer { get; private set; }
-
-        public static async Task Main()
+        try 
         {
-            Config config = Config.Load();
+            var config = Config.Load();
 
-            try 
-            {
-                Sniffer = new(config);
-            }
-            catch (NullReferenceException e)
-            {
-                Logger.Crit(e);
-            }
-
-            await Task.Delay(-1);
+            var sniffer = new Sniffer(config);
+            sniffer.Start();
         }
+        catch (Exception e)
+        {
+            Logger.Crit(e);
+        }
+
+        await Task.Delay(-1);
     }
 }
