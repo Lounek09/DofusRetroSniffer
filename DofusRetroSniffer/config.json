@@ -1,5 +1,7 @@
 {
   "Servers": [
+    "dofusretro-co-production.ankama-games.com",
+    "retro-co-staging.ankama-games.com",
     "dofusretro-ga-eratz.ankama-games.com",
     "dofusretro-ga-henual.ankama-games.com",
     "dofusretro-ga-crail.ankama-games.com",

@@ -10,8 +10,6 @@ public static class Program
 
     public static async Task Main()
     {
-        Logger.Info(Assembly.GetExecutingAssembly().Location);
-
         try 
         {
             var config = Config.Load();

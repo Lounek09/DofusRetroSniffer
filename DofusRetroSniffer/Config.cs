@@ -14,7 +14,7 @@ public class Config
 
     public Config()
     {
-        Servers = new();
+        Servers = [];
         LocalIp = string.Empty;
     }
 
