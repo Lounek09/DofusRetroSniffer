@@ -1,13 +1,9 @@
 ﻿using DofusRetroSniffer.Utils;
 
-using System.Reflection;
-
 namespace DofusRetroSniffer;
 
 public static class Program
 {
-    public static readonly string APP_PATH = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
-
     public static async Task Main()
     {
         try 

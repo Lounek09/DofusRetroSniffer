@@ -1,12 +1,10 @@
-﻿using DofusRetroSniffer.Utils;
-
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace DofusRetroSniffer;
 
 public class Config
 {
-    public static readonly string PATH = Path.Join(Program.APP_PATH, "config.json");
+    public static readonly string PATH = Path.Join(AppContext.BaseDirectory, "config.json");
 
     public List<string> Servers { get; set; }
     public ushort GamePort { get; set; }
