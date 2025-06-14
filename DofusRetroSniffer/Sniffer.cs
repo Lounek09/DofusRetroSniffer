@@ -5,87 +5,98 @@ using PacketDotNet;
 using SharpPcap;
 using SharpPcap.LibPcap;
 
+using System.Net;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace DofusRetroSniffer;
 
-public class Sniffer
+/// <summary>
+/// Represents a network packet sniffer for Dofus Retro.
+/// </summary>
+public sealed class Sniffer
 {
-    private readonly Config _config;
-
     private readonly LibPcapLiveDevice _device;
+    private readonly IPAddress _localIP;
+
     private readonly List<byte> _receivebuffer = [];
     private readonly List<byte> _sendbuffer = [];
 
-    public Sniffer(Config config)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Sniffer"/> class.
+    /// </summary>
+    /// <param name="config">The configuration for the sniffer.</param>
+    /// <param name="device">The network device to capture packets from.</param>
+    public Sniffer(SnifferConfig config, LibPcapLiveDevice device)
     {
-        _config = config;
-
-        _device = FindDevice(_config.LocalIp)
-            ?? throw new NullReferenceException($"Unable to find the device '{_config.LocalIp}' to listen to");
+        _device = device;
+        _localIP = IPAddress.Parse(config.LocalIp);
 
         _device.OnPacketArrival += Device_OnPacketArrival;
         _device.Open(new DeviceConfiguration()
         {
             LinkLayerType = LinkLayers.Ethernet
         });
-        _device.Filter = $"ip host {string.Join(" or ", _config.Servers)} and host {_config.LocalIp} and tcp and port {_config.GamePort}";
+        _device.Filter = $"ip host {string.Join(" or ", config.Servers)} and host {config.LocalIp} and tcp and port {config.GamePort}";
     }
 
-    public void Start()
+    /// <summary>
+    /// Starts listening for packets on the configured network device.
+    /// </summary>
+    public void Listen()
     {
         _device.StartCapture();
     }
 
-    private static LibPcapLiveDevice? FindDevice(string ip)
-    {
-        foreach (var device in LibPcapLiveDeviceList.Instance)
-        {
-            foreach (var adress in device.Addresses)
-            {
-                if (adress.Addr.ToString().Equals(ip))
-                    return device;
-            }
-        }
-
-        return null;
-    }
-
     private void Device_OnPacketArrival(object _, PacketCapture e)
     {
-        var rawPacket = e.GetPacket();
-        var packet = Packet.ParsePacket(rawPacket.LinkLayerType, rawPacket.Data);
-        var tcpPacket = packet.Extract<TcpPacket>();
-        var ipPacket = (IPv4Packet)tcpPacket.ParentPacket;
+        var rawCapture = e.GetPacket();
+        var packet = rawCapture.GetPacket();
+        var ipPacket = (IPv4Packet)packet.PayloadPacket;
+        var tcpPacket = (TcpPacket)ipPacket.PayloadPacket;
 
-        var isIncoming = ipPacket.DestinationAddress.ToString().Equals(_config.LocalIp);
-
-        //Translate PayloadData
         var rawData = tcpPacket.PayloadData;
+        var isIncoming = ipPacket.DestinationAddress.Equals(_localIP);
+
         if (rawData.Length > 0)
         {
             var buffer = isIncoming ? _receivebuffer : _sendbuffer;
             buffer.AddRange(rawData);
 
-            var separator = (byte)(isIncoming ? 0 : 10);
-            var posSeparator = buffer.IndexOf(separator);
-            while (posSeparator != -1)
+            // Each sent/received packet from the flash XMLSocket class is terminated by a zero (0) byte
+            var indexOfSeparator = buffer.IndexOf(0);
+
+            while (indexOfSeparator != -1)
             {
-                var rawDofusData = buffer.GetRange(0, posSeparator);
-                var dofusData = Encoding.UTF8.GetString(rawDofusData.ToArray());
+                // Each sent packet from the game client is also terminated by a 0x0A (10) byte
+                var rawDofusData = buffer.GetRange(0, indexOfSeparator - (isIncoming ? 0 : 1));
+                var rawDofusDataSpan = CollectionsMarshal.AsSpan(rawDofusData);
 
-                if (!isIncoming && dofusData.StartsWith('ù')) //Remove the post processing part from 1.39.5 update
+                // Since the 1.39.5 update, each sent packet is prefixed with telemetry data enclosed in 0xC3 0xB9 (195 185) bytes
+                if (!isIncoming && rawDofusData.Count > 1 && rawDofusData[0] == 195 && rawDofusData[1] == 185)
                 {
-                    var posEndPostProcessing = dofusData.IndexOf('ù', 1);
+                    rawDofusDataSpan = rawDofusDataSpan[2..];
 
-                    if (posEndPostProcessing != -1)
-                        dofusData = dofusData[(posEndPostProcessing + 1)..];
+                    var indexOfEndTelemetry = rawDofusDataSpan.IndexOf((byte)195);
+
+                    while (indexOfEndTelemetry != -1 && indexOfEndTelemetry < rawDofusDataSpan.Length - 1)
+                    {
+                        if (rawDofusDataSpan[indexOfEndTelemetry + 1] == 185)
+                        {
+                            rawDofusDataSpan = rawDofusDataSpan[(indexOfEndTelemetry + 2)..];
+                            break;
+                        }
+
+                        rawDofusDataSpan = rawDofusDataSpan[(indexOfEndTelemetry + 1)..];
+                        indexOfEndTelemetry = rawDofusDataSpan.IndexOf((byte)195);
+                    }
                 }
 
-                Logger.Packet(dofusData, isIncoming, e.Header.Timeval.Date);
+                var dofusData = Encoding.UTF8.GetString(rawDofusDataSpan);
+                PacketLogger.Write(dofusData, isIncoming, e.Header.Timeval.Date);
 
-                buffer.RemoveRange(0, posSeparator + (isIncoming ? 1 : 2));
-                posSeparator = buffer.IndexOf(separator);
+                buffer.RemoveRange(0, indexOfSeparator + 1);
+                indexOfSeparator = buffer.IndexOf(0);
             }
         }
     }

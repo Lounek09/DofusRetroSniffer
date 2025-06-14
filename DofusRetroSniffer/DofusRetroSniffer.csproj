@@ -2,11 +2,10 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <ApplicationIcon>Resources\sniffer.ico</ApplicationIcon>
-    <NoWin32Manifest>true</NoWin32Manifest>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
@@ -15,11 +14,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="SharpPcap" Version="6.2.5" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.6" />
+    <PackageReference Include="Serilog" Version="4.3.0" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="9.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageReference Include="SharpPcap" Version="6.3.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="config.json">
+    <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

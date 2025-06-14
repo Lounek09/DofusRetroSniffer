@@ -5,7 +5,7 @@ A simple sniffer for Dofus Retro written in C#
 - Install : https://npcap.com/
 
 ## License
-Copyright (C) 2023-2024 Lounek
+Copyright (C) 2023-2025 Lounek
 
 
 This program is free software: you can redistribute it and/or modify
