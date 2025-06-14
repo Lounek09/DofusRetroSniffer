@@ -68,12 +68,13 @@ public sealed class Sniffer
 
             while (indexOfSeparator != -1)
             {
+                var rawDofusDataSpan = CollectionsMarshal.AsSpan(buffer);
+
                 // Each sent packet from the game client is also terminated by a 0x0A (10) byte
-                var rawDofusData = buffer.GetRange(0, indexOfSeparator - (isIncoming ? 0 : 1));
-                var rawDofusDataSpan = CollectionsMarshal.AsSpan(rawDofusData);
+                rawDofusDataSpan = rawDofusDataSpan[..(indexOfSeparator - (isIncoming ? 0 : 1))];
 
                 // Since the 1.39.5 update, each sent packet is prefixed with telemetry data enclosed in 0xC3 0xB9 (195 185) bytes
-                if (!isIncoming && rawDofusData.Count > 1 && rawDofusData[0] == 195 && rawDofusData[1] == 185)
+                if (!isIncoming && rawDofusDataSpan.Length > 1 && rawDofusDataSpan[0] == 195 && rawDofusDataSpan[1] == 185)
                 {
                     rawDofusDataSpan = rawDofusDataSpan[2..];
 
