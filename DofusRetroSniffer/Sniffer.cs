@@ -28,7 +28,6 @@ public sealed class Sniffer
     /// <summary>
     /// Initializes a new instance of the <see cref="Sniffer"/> class.
     /// </summary>
-    /// <param name="logger">The logger.</param>
     /// <param name="config">The sniffer configuration.</param>
     public Sniffer(SnifferConfig config)
     {
@@ -99,12 +98,11 @@ public sealed class Sniffer
         var isIncoming = ipPacket.DestinationAddress.Equals(_localIP);
 
         _logger.Debug(
-            "Packet : {Direction} | Source: {Source} | Destination: {Destination} | Length: {Length}",
+            "Packet: {Direction} | Source: {Source} | Destination: {Destination} | Length: {Length}",
             isIncoming ? "INCOMING" : "OUTGOING",
             ipPacket.SourceAddress,
             ipPacket.DestinationAddress,
-            rawData.Length
-        );
+            rawData.Length);
 
         if (rawData.Length > 0)
         {
