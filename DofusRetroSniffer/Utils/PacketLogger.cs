@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using System.Text;
 
 namespace DofusRetroSniffer.Utils;
@@ -22,16 +21,15 @@ public static partial class PacketLogger
     /// <param name="message">The packet message to log.</param>
     /// <param name="isIncoming">Whether the packet is incoming or outgoing.</param>
     /// <param name="date">The date and time when the packet was captured.</param>
-    /// <exception cref="UnreachableException">Thrown if the packet direction is unknown.</exception>
     public static void Write(ReadOnlySpan<char> message, bool isIncoming, DateTime date)
     {
         var dateFormat = date.ToString("yyyy-MM-dd HH:mm:ss.fff");
         var arrow = isIncoming ? ArrowIncoming : ArrowOutgoing;
         var ansiColor = isIncoming ? AnsiColorIncoming : AnsiColorOutgoing;
 
-        StringBuilder logBuilder = new(1 + dateFormat.Length + 1 + 1 + arrow.Length + 1 + ansiColor.Length + message.Length + AnsiReset.Length);
+        StringBuilder logBuilder = new(dateFormat.Length + 1 + arrow.Length + 1 + ansiColor.Length + message.Length + AnsiReset.Length);
 
-        logBuilder.Append('[').Append(dateFormat).Append(']');
+        logBuilder.Append(dateFormat);
         logBuilder.Append(' ').Append(arrow).Append(' ');
         logBuilder.Append(ansiColor).Append(message).Append(AnsiReset);
 

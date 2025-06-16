@@ -2,6 +2,8 @@
 
 using PacketDotNet;
 
+using Serilog;
+
 using SharpPcap;
 using SharpPcap.LibPcap;
 
@@ -16,23 +18,24 @@ namespace DofusRetroSniffer;
 /// </summary>
 public sealed class Sniffer
 {
+    private readonly ILogger _logger;
+
     private readonly LibPcapLiveDevice _device;
     private readonly IPAddress _localIP;
-
     private readonly List<byte> _receivebuffer = [];
     private readonly List<byte> _sendbuffer = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Sniffer"/> class.
     /// </summary>
-    /// <param name="config">The configuration for the sniffer.</param>
-    /// <param name="device">The network device to capture packets from.</param>
-    public Sniffer(SnifferConfig config, LibPcapLiveDevice device)
+    /// <param name="logger">The logger.</param>
+    /// <param name="config">The sniffer configuration.</param>
+    public Sniffer(SnifferConfig config)
     {
-        _device = device;
+        _logger = Log.Logger.ForContext<Sniffer>();
         _localIP = IPAddress.Parse(config.LocalIp);
 
-        _device.OnPacketArrival += Device_OnPacketArrival;
+        _device = FindDevice();
         _device.Open(new DeviceConfiguration()
         {
             LinkLayerType = LinkLayers.Ethernet
@@ -41,11 +44,48 @@ public sealed class Sniffer
     }
 
     /// <summary>
-    /// Starts listening for packets on the configured network device.
+    /// Starts capturing packets on the configured network device.
     /// </summary>
-    public void Listen()
+    public void StartCapture()
     {
+        _device.OnPacketArrival += Device_OnPacketArrival;
+
         _device.StartCapture();
+
+        _logger.Debug("Started capturing packets");
+    }
+
+    /// <summary>
+    /// Stops capturing packets on the configured network device.
+    /// </summary>
+    public void StopCapture()
+    {
+        _device.OnPacketArrival -= Device_OnPacketArrival;
+
+        _device.StopCapture();
+
+        _logger.Debug("Stopped capturing packets");
+    }
+
+    /// <summary>
+    /// Finds the network device that matches the specified local IP address.
+    /// </summary>
+    /// <returns>The <see cref="LibPcapLiveDevice"/> instance corresponding to the specified IP address.</returns>
+    /// <exception cref="NullReferenceException">Thrown if no device is found that matches the specified IP address.</exception>
+    private LibPcapLiveDevice FindDevice()
+    {
+        foreach (var device in LibPcapLiveDeviceList.Instance)
+        {
+            foreach (var address in device.Addresses)
+            {
+                if (_localIP.Equals(address.Addr?.ipAddress))
+                {
+                    return device;
+                }
+            }
+        }
+
+        throw new InvalidOperationException($"Unable to find the device with IP '{_localIP}' to listen to");
     }
 
     private void Device_OnPacketArrival(object _, PacketCapture e)
@@ -57,6 +97,14 @@ public sealed class Sniffer
 
         var rawData = tcpPacket.PayloadData;
         var isIncoming = ipPacket.DestinationAddress.Equals(_localIP);
+
+        _logger.Debug(
+            "Packet : {Direction} | Source: {Source} | Destination: {Destination} | Length: {Length}",
+            isIncoming ? "INCOMING" : "OUTGOING",
+            ipPacket.SourceAddress,
+            ipPacket.DestinationAddress,
+            rawData.Length
+        );
 
         if (rawData.Length > 0)
         {
