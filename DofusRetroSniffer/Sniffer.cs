@@ -16,12 +16,25 @@ namespace DofusRetroSniffer;
 /// <summary>
 /// Represents a network packet sniffer for Dofus Retro.
 /// </summary>
-public sealed class Sniffer
+public interface ISniffer
+{
+    /// <summary>
+    /// Starts capturing packets on the configured network device.
+    /// </summary>
+    void StartCapture();
+
+    /// <summary>
+    /// Stops capturing packets on the configured network device.
+    /// </summary>
+    void StopCapture();
+}
+
+public sealed class Sniffer : ISniffer
 {
     private readonly ILogger _logger;
 
-    private readonly LibPcapLiveDevice _device;
     private readonly IPAddress _localIP;
+    private readonly LibPcapLiveDevice _device;
     private readonly List<byte> _receivebuffer = [];
     private readonly List<byte> _sendbuffer = [];
 
@@ -31,9 +44,9 @@ public sealed class Sniffer
     /// <param name="config">The sniffer configuration.</param>
     public Sniffer(SnifferConfig config)
     {
-        _logger = Log.Logger.ForContext<Sniffer>();
-        _localIP = IPAddress.Parse(config.LocalIp);
+        _logger = Log.ForContext<Sniffer>();
 
+        _localIP = IPAddress.Parse(config.LocalIp);
         _device = FindDevice();
         _device.Open(new DeviceConfiguration()
         {
@@ -42,9 +55,6 @@ public sealed class Sniffer
         _device.Filter = $"ip host {string.Join(" or ", config.Servers)} and host {config.LocalIp} and tcp and port {config.GamePort}";
     }
 
-    /// <summary>
-    /// Starts capturing packets on the configured network device.
-    /// </summary>
     public void StartCapture()
     {
         _device.OnPacketArrival += Device_OnPacketArrival;
@@ -54,9 +64,6 @@ public sealed class Sniffer
         _logger.Debug("Started capturing packets");
     }
 
-    /// <summary>
-    /// Stops capturing packets on the configured network device.
-    /// </summary>
     public void StopCapture()
     {
         _device.OnPacketArrival -= Device_OnPacketArrival;
@@ -139,8 +146,10 @@ public sealed class Sniffer
                     }
                 }
 
-                var dofusData = Encoding.UTF8.GetString(rawDofusDataSpan);
-                PacketLogger.Write(dofusData, isIncoming, e.Header.Timeval.Date);
+                var rawDofusData = Encoding.UTF8.GetString(rawDofusDataSpan);
+                var dateReceived = e.Header.Timeval.Date;
+
+                PacketLogger.Write(isIncoming, dateReceived, rawDofusData);
 
                 buffer.RemoveRange(0, indexOfSeparator + 1);
                 indexOfSeparator = buffer.IndexOf(0);

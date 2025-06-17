@@ -28,7 +28,7 @@ public static class Program
             ServiceCollection services = new();
 
             services.AddSingleton(snifferConfig);
-            services.AddSingleton<Sniffer>();
+            services.AddSingleton<ISniffer, Sniffer>();
 
             var provider = services.BuildServiceProvider();
 

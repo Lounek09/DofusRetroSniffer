@@ -18,20 +18,20 @@ public static partial class PacketLogger
     /// <summary>
     /// Writes a formatted log entry for a network packet to the console.
     /// </summary>
-    /// <param name="message">The packet message to log.</param>
     /// <param name="isIncoming">Whether the packet is incoming or outgoing.</param>
     /// <param name="date">The date and time when the packet was captured.</param>
-    public static void Write(ReadOnlySpan<char> message, bool isIncoming, DateTime date)
+    /// <param name="rawData">The raw data.</param>
+    public static void Write(bool isIncoming, DateTime date, ReadOnlySpan<char> rawData)
     {
         var dateFormat = date.ToString("yyyy-MM-dd HH:mm:ss.fff");
         var arrow = isIncoming ? ArrowIncoming : ArrowOutgoing;
         var ansiColor = isIncoming ? AnsiColorIncoming : AnsiColorOutgoing;
 
-        StringBuilder logBuilder = new(dateFormat.Length + 1 + arrow.Length + 1 + ansiColor.Length + message.Length + AnsiReset.Length);
+        StringBuilder logBuilder = new(dateFormat.Length + 1 + arrow.Length + 1 + ansiColor.Length + rawData.Length + AnsiReset.Length);
 
         logBuilder.Append(dateFormat);
         logBuilder.Append(' ').Append(arrow).Append(' ');
-        logBuilder.Append(ansiColor).Append(message).Append(AnsiReset);
+        logBuilder.Append(ansiColor).Append(rawData).Append(AnsiReset);
 
         Console.WriteLine(logBuilder);
     }

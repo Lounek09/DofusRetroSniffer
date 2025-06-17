@@ -8,13 +8,13 @@ namespace DofusRetroSniffer.Extensions;
 public static class ServiceProviderExtensions
 {
     /// <summary>
-    /// Starts the sniffer by retrieving the <see cref="Sniffer"/> service and initiating packet capture.
+    /// Starts the sniffer by retrieving the <see cref="ISniffer"/> service and initiating packet capture.
     /// </summary>
     /// <param name="provider">The service provider.</param>
     /// <returns>The service provider.</returns>
     public static IServiceProvider StartSniffer(this IServiceProvider provider)
     {
-        var sniffer = provider.GetRequiredService<Sniffer>();
+        var sniffer = provider.GetRequiredService<ISniffer>();
 
         sniffer.StartCapture();
 
@@ -22,13 +22,13 @@ public static class ServiceProviderExtensions
     }
 
     /// <summary>
-    /// Stops the sniffer by retrieving the <see cref="Sniffer"/> service and halting packet capture.
+    /// Stops the sniffer by retrieving the <see cref="ISniffer"/> service and halting packet capture.
     /// </summary>
     /// <param name="provider">The service provider.</param>
     /// <returns>The service provider.</returns>
     public static IServiceProvider StopSniffer(this IServiceProvider provider)
     {
-        var sniffer = provider.GetRequiredService<Sniffer>();
+        var sniffer = provider.GetRequiredService<ISniffer>();
 
         sniffer.StopCapture();
 
