@@ -1,19 +1,38 @@
-﻿using System.Runtime.InteropServices;
-using System.Text;
+﻿using Serilog;
+
+using System.Runtime.InteropServices;
 
 namespace DofusRetroSniffer.Utils;
 
 /// <summary>
-/// Provides logging functionality for network packets with color formatting.
+/// Provides methods for logging network packets to the console with color coding.
 /// </summary>
-public static partial class PacketLogger
+public interface IPacketLogger
+{
+    /// <summary>
+    /// Writes a formatted log entry for a network packet.
+    /// </summary>
+    /// <param name="isIncoming">Whether the packet is incoming or outgoing.</param>
+    /// <param name="date">The date and time when the packet was captured.</param>
+    /// <param name="rawData">The raw data of the packet.</param>
+    void Write(bool isIncoming, DateTime date, string rawData);
+}
+
+public partial class PacketLogger : IPacketLogger
 {
     private const string AnsiColorIncoming = "\x1b[34m"; // Blue
     private const string AnsiColorOutgoing = "\x1b[32m"; // Green
     private const string AnsiReset = "\x1b[m";
 
-    private const string ArrowIncoming = "<--";
-    private const string ArrowOutgoing = "-->";
+    private const string ArrowIncoming = "<---";
+    private const string ArrowOutgoing = "--->";
+
+    private readonly ILogger _logger;
+
+    public PacketLogger()
+    {
+        _logger = Log.ForContext<PacketLogger>();
+    }
 
     /// <summary>
     /// Writes a formatted log entry for a network packet to the console.
@@ -21,19 +40,19 @@ public static partial class PacketLogger
     /// <param name="isIncoming">Whether the packet is incoming or outgoing.</param>
     /// <param name="date">The date and time when the packet was captured.</param>
     /// <param name="rawData">The raw data.</param>
-    public static void Write(bool isIncoming, DateTime date, ReadOnlySpan<char> rawData)
+    public void Write(bool isIncoming, DateTime date, string rawData)
     {
         var dateFormat = date.ToString("yyyy-MM-dd HH:mm:ss.fff");
         var arrow = isIncoming ? ArrowIncoming : ArrowOutgoing;
         var ansiColor = isIncoming ? AnsiColorIncoming : AnsiColorOutgoing;
 
-        StringBuilder logBuilder = new(dateFormat.Length + 1 + arrow.Length + 1 + ansiColor.Length + rawData.Length + AnsiReset.Length);
-
-        logBuilder.Append(dateFormat);
-        logBuilder.Append(' ').Append(arrow).Append(' ');
-        logBuilder.Append(ansiColor).Append(rawData).Append(AnsiReset);
-
-        Console.WriteLine(logBuilder);
+        _logger.Information(
+            "{Timestamp}  {Direction}  {ColorStart}{RawData}{ColorEnd}",
+            dateFormat,
+            arrow,
+            ansiColor,
+            rawData,
+            AnsiReset);
     }
 
     #region Windows Console Ansi Support

@@ -32,6 +32,7 @@ public interface ISniffer
 public sealed class Sniffer : ISniffer
 {
     private readonly ILogger _logger;
+    private readonly IPacketLogger _packetLogger;
 
     private readonly IPAddress _localIP;
     private readonly LibPcapLiveDevice _device;
@@ -42,9 +43,11 @@ public sealed class Sniffer : ISniffer
     /// Initializes a new instance of the <see cref="Sniffer"/> class.
     /// </summary>
     /// <param name="config">The sniffer configuration.</param>
-    public Sniffer(SnifferConfig config)
+    /// <param name="packetLogger"> The logger to use for logging captured packets.</param>
+    public Sniffer(SnifferConfig config, IPacketLogger packetLogger)
     {
         _logger = Log.ForContext<Sniffer>();
+        _packetLogger = packetLogger;
 
         _localIP = IPAddress.Parse(config.LocalIp);
         _device = FindDevice();
@@ -157,7 +160,7 @@ public sealed class Sniffer : ISniffer
                 var rawDofusData = Encoding.UTF8.GetString(rawDofusDataSpan);
                 var dateReceived = e.Header.Timeval.Date;
 
-                PacketLogger.Write(isIncoming, dateReceived, rawDofusData);
+                _packetLogger.Write(isIncoming, dateReceived, rawDofusData);
 
                 buffer.RemoveRange(0, indexOfSeparator + 1);
                 indexOfSeparator = buffer.IndexOf(0);
