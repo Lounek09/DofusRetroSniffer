@@ -121,6 +121,14 @@ public sealed class Sniffer : ISniffer
 
             while (indexOfSeparator != -1)
             {
+                if (indexOfSeparator == 0)
+                {
+                    buffer.RemoveAt(0);
+                    indexOfSeparator = buffer.IndexOf(0);
+
+                    continue;
+                }
+
                 var rawDofusDataSpan = CollectionsMarshal.AsSpan(buffer);
 
                 // Each sent packet from the game client is also terminated by a 0x0A (10) byte
