@@ -36,8 +36,8 @@ public sealed class Sniffer : ISniffer
 
     private readonly IPAddress _localIP;
     private readonly LibPcapLiveDevice _device;
-    private readonly List<byte> _receivebuffer = [];
-    private readonly List<byte> _sendbuffer = [];
+    private readonly List<byte> _receivebuffer;
+    private readonly List<byte> _sendbuffer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Sniffer"/> class.
@@ -56,6 +56,8 @@ public sealed class Sniffer : ISniffer
             LinkLayerType = LinkLayers.Ethernet
         });
         _device.Filter = $"ip host {string.Join(" or ", config.Servers)} and host {config.LocalIp} and tcp and port {config.GamePort}";
+        _receivebuffer = [];
+        _sendbuffer = [];
     }
 
     public void StartCapture()
