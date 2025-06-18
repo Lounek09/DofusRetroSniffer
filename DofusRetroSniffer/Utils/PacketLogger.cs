@@ -13,13 +13,16 @@ public interface IPacketLogger
     /// Writes a formatted log entry for a network packet.
     /// </summary>
     /// <param name="isIncoming">Whether the packet is incoming or outgoing.</param>
-    /// <param name="date">The date and time when the packet was captured.</param>
+    /// <param name="dateCaptured">When the packet was captured.</param>
     /// <param name="rawData">The raw data of the packet.</param>
-    void Write(bool isIncoming, DateTime date, string rawData);
+    void Write(bool isIncoming, DateTime dateCaptured, string rawData);
 }
 
 public partial class PacketLogger : IPacketLogger
 {
+    public const string Incoming = "INCOMING";
+    public const string Outgoing = "OUTGOING";
+
     private const string AnsiColorIncoming = "\x1b[34m"; // Blue
     private const string AnsiColorOutgoing = "\x1b[32m"; // Green
     private const string AnsiReset = "\x1b[m";
@@ -38,21 +41,17 @@ public partial class PacketLogger : IPacketLogger
     /// Writes a formatted log entry for a network packet to the console.
     /// </summary>
     /// <param name="isIncoming">Whether the packet is incoming or outgoing.</param>
-    /// <param name="date">The date and time when the packet was captured.</param>
+    /// <param name="dateCaptured">When the packet was captured.</param>
     /// <param name="rawData">The raw data.</param>
-    public void Write(bool isIncoming, DateTime date, string rawData)
+    public void Write(bool isIncoming, DateTime dateCaptured, string rawData)
     {
-        var dateFormat = date.ToString("yyyy-MM-dd HH:mm:ss.fff");
-        var arrow = isIncoming ? ArrowIncoming : ArrowOutgoing;
+        var direction = isIncoming ? ArrowIncoming : ArrowOutgoing;
         var ansiColor = isIncoming ? AnsiColorIncoming : AnsiColorOutgoing;
 
-        _logger.Information(
-            "{Timestamp}  {Direction}  {ColorStart}{RawData}{ColorEnd}",
-            dateFormat,
-            arrow,
-            ansiColor,
-            rawData,
-            AnsiReset);
+        _logger
+            .ForContext("PacketTimestamp", dateCaptured)
+            .ForContext("Direction", direction)
+            .Information("{ColorStart}{RawData}{ColorEnd}", ansiColor, rawData, AnsiReset);
     }
 
     #region Windows Console Ansi Support

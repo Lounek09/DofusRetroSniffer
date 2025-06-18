@@ -21,7 +21,7 @@ public static class Program
             .ReadFrom.Configuration(config)
             .CreateLogger();
 
-        try 
+        try
         {
             var snifferConfig = config.GetSection("Sniffer").Get<SnifferConfig>()
                 ?? throw new InvalidOperationException("Invalid configuration: 'Sniffer' section is missing or malformed.");
@@ -29,8 +29,8 @@ public static class Program
             ServiceCollection services = new();
 
             services.AddSingleton(snifferConfig);
-            services.AddSingleton<IPacketLogger, PacketLogger>();
             services.AddSingleton<ISniffer, Sniffer>();
+            services.AddSingleton<IPacketLogger, PacketLogger>();
 
             var provider = services.BuildServiceProvider();
 

@@ -109,12 +109,8 @@ public sealed class Sniffer : ISniffer
         var rawData = tcpPacket.PayloadData;
         var isIncoming = ipPacket.DestinationAddress.Equals(_localIP);
 
-        _logger.Debug(
-            "Packet: {Direction} | Source: {Source} | Destination: {Destination} | Length: {Length}",
-            isIncoming ? "INCOMING" : "OUTGOING",
-            ipPacket.SourceAddress,
-            ipPacket.DestinationAddress,
-            rawData.Length);
+        _logger.Debug("Captured packet: {Direction} | Source: {Source} | Destination: {Destination} | Length: {Length}",
+            isIncoming ? PacketLogger.Incoming : PacketLogger.Outgoing, ipPacket.SourceAddress, ipPacket.DestinationAddress, rawData.Length);
 
         if (rawData.Length > 0)
         {
@@ -159,10 +155,10 @@ public sealed class Sniffer : ISniffer
                     }
                 }
 
+                var dateCaptured = e.Header.Timeval.Date.ToLocalTime();
                 var rawDofusData = Encoding.UTF8.GetString(rawDofusDataSpan);
-                var dateReceived = e.Header.Timeval.Date;
 
-                _packetLogger.Write(isIncoming, dateReceived, rawDofusData);
+                _packetLogger.Write(isIncoming, dateCaptured, rawDofusData);
 
                 buffer.RemoveRange(0, indexOfSeparator + 1);
                 indexOfSeparator = buffer.IndexOf(0);
