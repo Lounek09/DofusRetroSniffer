@@ -5,7 +5,7 @@ A simple sniffer for Dofus Retro.
 
 - **.NET**: https://dotnet.microsoft.com/en-us/download
 
-### Linux/macOS :
+### Linux :
 - **libpcap**: https://www.tcpdump.org/index.html
   - On Debian-based systems, you can install it with:
     ```bash
