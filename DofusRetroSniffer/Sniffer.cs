@@ -1,4 +1,5 @@
-﻿using DofusRetroSniffer.Utils;
+﻿using DofusRetroSniffer.Network.Packets;
+using DofusRetroSniffer.Utils;
 
 using PacketDotNet;
 
@@ -79,10 +80,10 @@ public sealed class Sniffer : ISniffer
     }
 
     /// <summary>
-    /// Finds the network device that matches the specified local IP address.
+    /// Finds the network device that matches the specified local IP address in the configuration.
     /// </summary>
-    /// <returns>The <see cref="LibPcapLiveDevice"/> instance corresponding to the specified IP address.</returns>
-    /// <exception cref="NullReferenceException">Thrown if no device is found that matches the specified IP address.</exception>
+    /// <returns>The <see cref="LibPcapLiveDevice"/> instance corresponding to the IP address.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if no device is found that matches the IP address.</exception>
     private LibPcapLiveDevice FindDevice()
     {
         foreach (var device in LibPcapLiveDeviceList.Instance)
@@ -158,7 +159,9 @@ public sealed class Sniffer : ISniffer
                 var dateCaptured = e.Header.Timeval.Date.ToLocalTime();
                 var rawDofusData = Encoding.UTF8.GetString(rawDofusDataSpan);
 
-                _packetLogger.Write(isIncoming, dateCaptured, rawDofusData);
+                RawDofusPacket rawDofusPacket = new(isIncoming, dateCaptured, rawDofusData);
+
+                _packetLogger.Write(rawDofusPacket);
 
                 buffer.RemoveRange(0, indexOfSeparator + 1);
                 indexOfSeparator = buffer.IndexOf(0);

@@ -1,4 +1,6 @@
-﻿using Serilog;
+﻿using DofusRetroSniffer.Network.Packets;
+
+using Serilog;
 
 using System.Runtime.InteropServices;
 
@@ -12,10 +14,8 @@ public interface IPacketLogger
     /// <summary>
     /// Writes a formatted log entry for a network packet.
     /// </summary>
-    /// <param name="isIncoming">Whether the packet is incoming or outgoing.</param>
-    /// <param name="dateCaptured">When the packet was captured.</param>
-    /// <param name="rawData">The raw data of the packet.</param>
-    void Write(bool isIncoming, DateTime dateCaptured, string rawData);
+    /// <param name="rawDofusPacket">The raw Dofus packet to log.</param>
+    void Write(RawDofusPacket rawDofusPacket);
 }
 
 public partial class PacketLogger : IPacketLogger
@@ -37,21 +37,16 @@ public partial class PacketLogger : IPacketLogger
         _logger = Log.ForContext<PacketLogger>();
     }
 
-    /// <summary>
-    /// Writes a formatted log entry for a network packet to the console.
-    /// </summary>
-    /// <param name="isIncoming">Whether the packet is incoming or outgoing.</param>
-    /// <param name="dateCaptured">When the packet was captured.</param>
-    /// <param name="rawData">The raw data.</param>
-    public void Write(bool isIncoming, DateTime dateCaptured, string rawData)
+    public void Write(RawDofusPacket rawDofusPacket)
     {
+        var isIncoming = rawDofusPacket.IsIncoming;
         var direction = isIncoming ? ArrowIncoming : ArrowOutgoing;
         var ansiColor = isIncoming ? AnsiColorIncoming : AnsiColorOutgoing;
 
         _logger
-            .ForContext("PacketTimestamp", dateCaptured)
+            .ForContext("PacketTimestamp", rawDofusPacket.DateCaptured)
             .ForContext("Direction", direction)
-            .Information("{ColorStart}{RawData}{ColorEnd}", ansiColor, rawData, AnsiReset);
+            .Information("{ColorStart}{RawData}{ColorEnd}", ansiColor, rawDofusPacket.RawData, AnsiReset);
     }
 
     #region Windows Console Ansi Support
